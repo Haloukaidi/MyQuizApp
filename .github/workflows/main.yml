@@ -30,6 +30,13 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
+    # --- 核心修复：在运行sdkmanager前，切换到兼容的Java 8版本 ---
+    - name: Set up Java 8
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin' # 一个可靠的OpenJDK发行版
+        java-version: '8'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -46,13 +53,11 @@ jobs:
         sed -i 's/#requirements = python3,kivy/requirements = python3,kivy==2.3.0,beautifulsoup4/' buildozer.spec
         sed -i 's/#orientation = landscape/orientation = portrait/' buildozer.spec
         sed -i 's/#fullscreen = 0/fullscreen = 1/' buildozer.spec
-        # --- 核心修复 1：明确指定一个稳定的 build-tools 版本 ---
         echo "android.build_tools = 34.0.0" >> buildozer.spec
 
-    # --- 核心修复 2：在构建前，强制接受所有 SDK 许可证 ---
     - name: Force accept Android SDK licenses
       run: |
-        # 使用 yes 命令通过管道自动向 sdkmanager 输入 'y'
+        # 现在这个命令将在Java 8环境下运行，不会再报错
         yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
 
     - name: Build with Buildozer
