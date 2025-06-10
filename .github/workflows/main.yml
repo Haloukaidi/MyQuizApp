@@ -2,20 +2,20 @@ name: Buildozer Android APK
 
 on:
   push:
-    branches: [ "master" ] # 当有代码推送到master分支时触发
+    branches: [ "master" ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest # 使用最新的Ubuntu服务器
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4 # 更新checkout到v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5 # 更新setup-python到v5
       with:
-        python-version: '3.9' # 使用Python 3.9
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
@@ -43,7 +43,8 @@ jobs:
       run: buildozer -v android debug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      # --- 关键修改：将版本号从 v3 更新到 v4 ---
+      uses: actions/upload-artifact@v4
       with:
         name: quiz-app-apk
         path: bin/*.apk
