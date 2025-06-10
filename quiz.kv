@@ -102,6 +102,8 @@
         size_hint_y: None
         height: self.texture_size[1]
 
+# 在 quiz.kv 文件中找到并替换这个样式规则
+
 <QuizOption>:
     size_hint_y: None
     height: internal_label.height + dp(20)
@@ -117,13 +119,11 @@
 
         canvas.before:
             Color:
-                # --- 关键修改：根据feedback_state决定边框颜色 ---
                 rgba: get_color_from_hex('#2E7D32') if root.feedback_state == 'correct' else (get_color_from_hex('#C62828') if root.feedback_state == 'wrong' else (get_color_from_hex('#1976D2') if self.state == 'down' else (.8,.8,.8,1)))
             Line:
                 width: 1.5
                 rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
             Color:
-                # --- 关键修改：根据feedback_state决定背景颜色 ---
                 rgba: get_color_from_hex('#e8f5e9') if root.feedback_state == 'correct' else (get_color_from_hex('#ffebee') if root.feedback_state == 'wrong' else (get_color_from_hex('#E3F2FD') if self.state == 'down' else (1,1,1,1)))
             RoundedRectangle:
                 pos: self.pos
@@ -134,14 +134,23 @@
         id: internal_label
         text: root.text
         font_name: 'NotoSansSC-Regular.ttf'
-        size_hint: None, None
-        size: self.texture_size
+        # --- 关键修改：这是实现自动换行的核心 ---
+        # 1. 将Label的宽度与父容器绑定，并留出边距
+        size_hint_x: 1
+        width: self.texture_size[0]
+        # 2. 明确设置text_size，其宽度为Label自身的宽度减去边距和图标空间
+        text_size: self.width - dp(50), None
+        # 3. 让Label的高度等于其渲染后文本的实际高度
+        size_hint_y: None
+        height: self.texture_size[1]
+        
         pos_hint: {'center_y': 0.5}
-        x: toggle.x + dp(10)
+        halign: 'left'
+        valign: 'middle'
+        padding_x: dp(10) # 设置水平内边距
         color: 0,0,0,1
 
     Label:
-        # 根据feedback_state决定显示哪个图标
         text: u'\U000F012C' if root.feedback_state == 'correct' else (u'\U000F0156' if root.feedback_state == 'wrong' else (u'\U000F012C' if toggle.state == 'down' else ''))
         font_name: 'materialdesignicons-webfont.ttf'
         font_size: '20sp'
