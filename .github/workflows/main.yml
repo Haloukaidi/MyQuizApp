@@ -4,7 +4,6 @@ name: Buildozer Android APK
 
 on:
   push:
-    # 修正：GitHub Actions通常使用 main 而不是 master 作为主分支名
     branches: [ "main", "master" ]
 
 jobs:
@@ -15,7 +14,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # --- 关键修改：添加缓存步骤，这将极大地加速后续的构建 ---
     - name: Cache Buildozer global directory
       uses: actions/cache@v4
       with:
@@ -29,42 +27,33 @@ jobs:
       with:
         python-version: '3.9'
 
-    # --- 关键修改：【核心修复】使用标准Action来安装Android SDK ---
-    # 这会正确安装sdkmanager, ndk, build-tools等，并配置好所有路径
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    # --- 关键修改：精简依赖安装步骤 ---
     - name: Install dependencies
       run: |
-        # 我们不再需要手动安装JDK或各种dev库，因为setup-android和buildozer会处理
         python -m pip install --upgrade pip
-        # 确保安装了与buildozer.spec中版本一致的kivy
-        pip install buildozer==1.5.0 "kivy[base,sdl2]==2.3.0" beautifulsoup4 cython==0.29.34
+        pip install "buildozer==1.5.0" "kivy[base,sdl2]==2.3.0" "beautifulsoup4" "cython==0.29.34"
 
     - name: Initialize Buildozer
       run: buildozer init
     
     - name: Configure buildozer.spec
       run: |
-        # 您的配置脚本非常好，我们保留它
         sed -i 's/#title = My Application/title = 刷题小程序/' buildozer.spec
         sed -i 's/package.name = myapp/package.name = quizapp/' buildozer.spec
         sed -i 's/#source.include_exts = py,png,jpg,kv,atlas/source.include_exts = py,png,jpg,kv,atlas,htm,html,ttf/' buildozer.spec
-        # 修正：hostpython3不是一个pip包，它由buildozer管理。kivy版本应与pip安装的匹配
         sed -i 's/#requirements = python3,kivy/requirements = python3,kivy==2.3.0,beautifulsoup4/' buildozer.spec
         sed -i 's/#orientation = landscape/orientation = portrait/' buildozer.spec
         sed -i 's/#fullscreen = 0/fullscreen = 1/' buildozer.spec
-        # 修正：这些API/SDK/NDK版本让buildozer自动决定或从p4a获取，更加稳健
-        # 删除手动指定的版本，除非有特殊需要
-        # echo "android.api = 31" >> buildozer.spec
-        # echo "android.minapi = 21" >> buildozer.spec
-        # echo "android.sdk = 24" >> buildozer.spec
-        # echo "android.ndk = 25b" >> buildozer.spec
+        # --- 核心修复 1：明确指定一个稳定的 build-tools 版本 ---
+        echo "android.build_tools = 34.0.0" >> buildozer.spec
 
-    # --- 关键修改：删除手动接受许可证的步骤 ---
-    # `setup-android` Action已经帮我们处理了许可证问题，所以不再需要这个复杂的步骤
-    # - name: Accept Android SDK licenses ... (整个步骤被删除)
+    # --- 核心修复 2：在构建前，强制接受所有 SDK 许可证 ---
+    - name: Force accept Android SDK licenses
+      run: |
+        # 使用 yes 命令通过管道自动向 sdkmanager 输入 'y'
+        yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
 
     - name: Build with Buildozer
       run: buildozer -v android debug
