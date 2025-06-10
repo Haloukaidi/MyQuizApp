@@ -1,3 +1,7 @@
+# .github/workflows/build-apk.yml
+# 这个工作流的名称，会显示在GitHub Actions的侧边栏
+name: 'Build Android APK'
+
 on:
   push:
     branches: [ main ]
