@@ -1,80 +1,80 @@
-# .github/workflows/main.yml
+name: 'Kivy App to APK'
+description: 'Convert Kivy app to APK'
+inputs:
+  python-version:
+    description: 'Python version to use'
+    default: '3.8'
+  work-dir:
+    default: '.'
+    description: 'Working directory'
+  buildozer-cmd:
+    default: 'buildozer android debug'
+    description: 'Buildozer command to use'
 
-name: Buildozer Android APK
+# Add the branding section
+branding:
+  color: 'green'
+  icon: 'play'
 
-on:
-  push:
-    branches: [ "main", "master" ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Cache Buildozer global directory
-      uses: actions/cache@v4
-      with:
-        path: ~/.buildozer
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
-
-    - name: Set up Python
+runs:
+  using: "composite"
+  steps:
+    - name: Setup python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        architecture: x64
+        python-version: ${{ inputs.python-version }}
 
-    # 明确使用Java 17，以满足现代Android工具链的要求
-    - name: Set up JDK 17
+    - name: Setup Java 17 required by Gradle
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
+        distribution: 'temurin'  # or 'zulu','liberica', etc.
         java-version: '17'
 
-    # 安装Android SDK命令行工具，这是基础
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-    
-    - name: Install dependencies
+    - name: Set JAVA_HOME
       run: |
-        python -m pip install --upgrade pip
-        pip install "buildozer==1.5.0" "kivy[base,sdl2]==2.3.0" "beautifulsoup4" "cython==0.29.34"
+        echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+      shell: bash
 
-    # --- 核心修复：在Buildozer运行前，强制安装所有必需的SDK组件 ---
-    - name: Install Android Build Tools and Platform Tools
+    - name: Prepare virtual environment
       run: |
-        # 我们不再依赖buildozer去安装，我们自己来！
-        # 这会安装我们指定的build-tools, 最新的platform-tools, 和一个编译用的平台SDK
-        # 'yes' 命令会自动接受所有弹出的许可证
-        echo "y" | sdkmanager "build-tools;34.0.0" "platform-tools" "platforms;android-34"
-
-    - name: Initialize Buildozer
-      run: buildozer init
-    
-    - name: Configure buildozer.spec
+        python3 -m venv venv
+        source venv/bin/activate
+        echo "Using Python==$(python --version)"
+      shell: bash
+      
+    - name: Install and upgrade dependencies
       run: |
-        sed -i 's/#title = My Application/title = 刷题小程序/' buildozer.spec
-        sed -i 's/package.name = myapp/package.name = quizapp/' buildozer.spec
-        sed -i 's/#source.include_exts = py,png,jpg,kv,atlas/source.include_exts = py,png,jpg,kv,atlas,htm,html,ttf/' buildozer.spec
-        sed -i 's/#requirements = python3,kivy/requirements = python3,kivy==2.3.0,beautifulsoup4/' buildozer.spec
-        sed -i 's/#orientation = landscape/orientation = portrait/' buildozer.spec
-        sed -i 's/#fullscreen = 0/fullscreen = 1/' buildozer.spec
-        # 明确告诉buildozer我们已经安装了哪些版本，让它直接使用
-        echo "android.build_tools = 34.0.0" >> buildozer.spec
-        echo "android.platform = 34" >> buildozer.spec
+        sudo apt update
+        sudo apt install -y git \
+          zip \
+          unzip \
+          openjdk-17-jdk \
+          python3-pip \
+          autoconf \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo5 \
+          cmake \
+          libffi-dev \
+          libssl-dev
+        export PATH=$PATH:~/.local/bin/
+        python3 -m pip install --upgrade \
+          Cython==0.29.33 \
+          buildozer
+      shell: bash
 
-    # --- 关键修改：删除所有之前失败的许可证接受步骤 ---
-    # 我们已经在上一步的安装命令中处理了许可证，不再需要这些了
-    # - name: Force accept Android SDK licenses ... (整个步骤被删除)
+    - name: Install requirements in requirements.txt if it exists
+      run: |
+        if [ -f requirements.txt ]; then
+          python3 -m pip install -r requirements.txt
+        fi
+      shell: bash
 
     - name: Build with Buildozer
-      run: buildozer -v android debug
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: quiz-app-apk
-        path: bin/*.apk
+      run: |
+        ${{ inputs.buildozer-cmd }}
+      shell: bash
