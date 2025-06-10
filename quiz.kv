@@ -1,0 +1,368 @@
+#:kivy 1.11.1
+
+#:import SlideTransition kivy.uix.screenmanager.SlideTransition
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+
+<TitleLabel@Label>:
+    font_name: 'NotoSansSC-Regular.ttf'
+    font_size: '24sp'
+    size_hint_y: None
+    height: '48dp'
+    color: 0, 0, 0, 1
+
+<SubtitleLabel@Label>:
+    font_name: 'NotoSansSC-Regular.ttf'
+    font_size: '18sp'
+    size_hint_y: None
+    height: '36dp'
+    halign: 'left'
+    text_size: self.width, None
+    color: .2, .2, .2, 1
+
+<NavButton@Button>:
+    font_name: 'NotoSansSC-Regular.ttf'
+    size_hint_y: 1
+    background_color: 0.9, 0.9, 0.9, 1
+    color: get_color_from_hex('#1976D2')
+    background_normal: ''
+    background_down: ''
+
+<ListItemCard>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: '90dp'
+    padding: '10dp'
+    spacing: '5dp'
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [5]
+    Label:
+        text: root.title
+        font_name: 'NotoSansSC-Regular.ttf'
+        font_size: '16sp'
+        color: 0,0,0,1
+        halign: 'left'
+        text_size: self.width, None
+    BoxLayout:
+        id: button_box
+        size_hint_y: None
+        height: '40dp'
+        spacing: '10dp'
+        Label:
+            text: root.subtitle
+            font_name: 'NotoSansSC-Regular.ttf'
+            font_size: '14sp'
+            color: .4, .4, .4, 1
+            halign: 'left'
+            text_size: self.width, None
+        Button:
+            id: action_button
+            font_name: 'NotoSansSC-Regular.ttf'
+            size_hint_x: 0.4
+
+<ReviewItemCard>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: self.minimum_height
+    padding: '10dp'
+    spacing: '5dp'
+    canvas.before:
+        Color:
+            rgba: root.item_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [5]
+    Label:
+        text: root.question_text
+        font_name: 'NotoSansSC-Regular.ttf'
+        font_size: '16sp'
+        color: 0,0,0,1
+        text_size: self.width, None
+        size_hint_y: None
+        height: self.texture_size[1]
+    Label:
+        text: root.user_answer_text
+        font_name: 'NotoSansSC-Regular.ttf'
+        font_size: '14sp'
+        color: .2, .2, .2, 1
+        text_size: self.width, None
+        size_hint_y: None
+        height: self.texture_size[1]
+    Label:
+        text: root.correct_answer_text
+        font_name: 'NotoSansSC-Regular.ttf'
+        font_size: '14sp'
+        color: .2, .2, .2, 1
+        text_size: self.width, None
+        size_hint_y: None
+        height: self.texture_size[1]
+
+<QuizOption>:
+    size_hint_y: None
+    height: internal_label.height + dp(20)
+
+    ToggleButton:
+        id: toggle
+        group: root.group
+        state: 'down' if root.active else 'normal'
+        on_state: root.active = (self.state == 'down')
+        disabled: root.disabled
+        background_normal: ''
+        background_down: ''
+
+        canvas.before:
+            Color:
+                # --- 关键修改：根据feedback_state决定边框颜色 ---
+                rgba: get_color_from_hex('#2E7D32') if root.feedback_state == 'correct' else (get_color_from_hex('#C62828') if root.feedback_state == 'wrong' else (get_color_from_hex('#1976D2') if self.state == 'down' else (.8,.8,.8,1)))
+            Line:
+                width: 1.5
+                rounded_rectangle: (self.x, self.y, self.width, self.height, 5)
+            Color:
+                # --- 关键修改：根据feedback_state决定背景颜色 ---
+                rgba: get_color_from_hex('#e8f5e9') if root.feedback_state == 'correct' else (get_color_from_hex('#ffebee') if root.feedback_state == 'wrong' else (get_color_from_hex('#E3F2FD') if self.state == 'down' else (1,1,1,1)))
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [5]
+
+    Label:
+        id: internal_label
+        text: root.text
+        font_name: 'NotoSansSC-Regular.ttf'
+        size_hint: None, None
+        size: self.texture_size
+        pos_hint: {'center_y': 0.5}
+        x: toggle.x + dp(10)
+        color: 0,0,0,1
+
+    Label:
+        # 根据feedback_state决定显示哪个图标
+        text: u'\U000F012C' if root.feedback_state == 'correct' else (u'\U000F0156' if root.feedback_state == 'wrong' else (u'\U000F012C' if toggle.state == 'down' else ''))
+        font_name: 'materialdesignicons-webfont.ttf'
+        font_size: '20sp'
+        color: get_color_from_hex('#2E7D32') if root.feedback_state == 'correct' else (get_color_from_hex('#C62828') if root.feedback_state == 'wrong' else get_color_from_hex('#1976D2'))
+        size_hint: None, None
+        size: self.texture_size
+        pos_hint: {'center_y': 0.5, 'right': 0.98}
+        opacity: 1 if root.feedback_state != 'normal' or toggle.state == 'down' else 0
+
+<ThemedPopup>:
+    title_font: 'NotoSansSC-Regular.ttf'
+    # --- 关键修改：将弹窗标题设为白色，以适应深色背景 ---
+    title_color: 1, 1, 1, 1
+    separator_color: .9, .9, .9, 1
+    # --- 关键修改：为弹窗标题栏设置深色背景 ---
+    canvas.before:
+        Color:
+            rgba: get_color_from_hex('#333333') # Dark gray for title background
+        Rectangle:
+            pos: self.x, self.y + self.height - self.title_size - self.separator_height
+            size: self.width, self.title_size + self.separator_height
+        Color:
+            rgba: 1, 1, 1, 1 # White for content background
+        Rectangle:
+            pos: self.pos
+            size: self.width, self.height - self.title_size - self.separator_height
+
+ScreenManager:
+    transition: SlideTransition(direction='left')
+    StartScreen:
+        name: 'start'
+    HistoryScreen:
+        name: 'history'
+    QuizScreen:
+        name: 'quiz'
+    ReviewScreen:
+        name: 'review'
+
+<StartScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '10dp'
+        spacing: '10dp'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        TitleLabel:
+            text: '多功能练习小程序'
+        SubtitleLabel:
+            text: '继续练习'
+        ScrollView:
+            # --- 关键修改：确保ScrollView能正确处理内部内容的高度 ---
+            GridLayout:
+                id: in_progress_list
+                cols: 1
+                spacing: '10dp'
+                size_hint_y: None
+                height: self.minimum_height
+        SubtitleLabel:
+            text: '开始新挑战'
+        ScrollView:
+            size_hint_y: 1.5
+            GridLayout:
+                id: new_quiz_list
+                cols: 1
+                spacing: '10dp'
+                size_hint_y: None
+                height: self.minimum_height
+        BoxLayout:
+            size_hint_y: None
+            height: '48dp'
+            spacing: '10dp'
+            Button:
+                text: '查看所有错题记录'
+                font_name: 'NotoSansSC-Regular.ttf'
+                on_press: root.manager.current = 'history'
+            Button:
+                text: '删除所有记录'
+                font_name: 'NotoSansSC-Regular.ttf'
+                background_color: 0.8, 0.2, 0.2, 1
+                on_press: root.confirm_delete_records()
+
+<HistoryScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '10dp'
+        spacing: '10dp'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        TitleLabel:
+            text: '历史错题记录'
+        ScrollView:
+            GridLayout:
+                id: history_list
+                cols: 1
+                spacing: '10dp'
+                size_hint_y: None
+                height: self.minimum_height
+        NavButton:
+            text: '返回主菜单'
+            size_hint_y: None
+            height: '48dp'
+            on_press: root.manager.current = 'start'
+
+<ReviewScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '10dp'
+        spacing: '10dp'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        TitleLabel:
+            text: '答题复盘'
+        ScrollView:
+            GridLayout:
+                id: review_list
+                cols: 1
+                spacing: '10dp'
+                size_hint_y: None
+                height: self.minimum_height
+        NavButton:
+            text: '返回主菜单'
+            size_hint_y: None
+            height: '48dp'
+            on_press: root.manager.current = 'start'
+
+<QuizScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '10dp'
+        spacing: '10dp'
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: 0.15
+            Label:
+                text: root.question_type_text
+                font_name: 'NotoSansSC-Regular.ttf'
+                color: (1, 0, 0, 1)
+                font_size: '18sp'
+                size_hint_x: 0.25
+            Label:
+                text: root.question_info_text
+                font_name: 'NotoSansSC-Regular.ttf'
+                font_size: '18sp'
+                text_size: self.width, None
+                valign: 'middle'
+                color: 0, 0, 0, 1
+        Label:
+            text: root.score_text
+            font_name: 'NotoSansSC-Regular.ttf'
+            size_hint_y: 0.05
+            # --- 关键修改：将进度和得分文字颜色设为黑色 ---
+            color: 0, 0, 0, 1
+        BoxLayout:
+            size_hint_y: 0.35
+            padding: '10dp'
+            canvas.before:
+                Color:
+                    rgba: 1,1,1,1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [5]
+            ScrollView:
+                Label:
+                    text: root.question_text
+                    font_name: 'NotoSansSC-Regular.ttf'
+                    font_size: '18sp'
+                    color: 0,0,0,1
+                    text_size: self.width, None
+                    size_hint_y: None
+                    height: self.texture_size[1]
+        ScrollView:
+            size_hint_y: 0.35
+            GridLayout:
+                id: options_box
+                cols: 1
+                spacing: '8dp'
+                size_hint_y: None
+                height: self.minimum_height
+        Label:
+            text: root.feedback_text
+            font_name: 'NotoSansSC-Regular.ttf'
+            color: root.feedback_color
+            size_hint_y: 0.1
+            text_size: self.width, None
+        BoxLayout:
+            size_hint_y: None
+            height: '48dp'
+            spacing: '10dp'
+            NavButton:
+                id: prev_button
+                text: '上一题'
+                on_press: root.prev_question()
+            NavButton:
+                id: submit_button
+                text: '提交答案'
+                background_color: 0.1, 0.4, 0.7, 1
+                color: 1,1,1,1
+                on_press: root.check_answer()
+            NavButton:
+                id: next_button
+                text: '下一题'
+                on_press: root.next_question()
+            NavButton:
+                id: back_button
+                text: '返回主菜单'
+                on_press: root.go_back_to_start()
