@@ -180,6 +180,7 @@ ScreenManager:
     ReviewScreen:
         name: 'review'
 
+# 在 quiz.kv 文件中找到并替换这个样式规则
 <StartScreen>:
     BoxLayout:
         orientation: 'vertical'
@@ -196,7 +197,8 @@ ScreenManager:
         SubtitleLabel:
             text: '继续练习'
         ScrollView:
-            # --- 关键修改：确保ScrollView能正确处理内部内容的高度 ---
+            # --- 关键修改：让ScrollView填充可用空间 ---
+            size_hint_y: 1 
             GridLayout:
                 id: in_progress_list
                 cols: 1
@@ -206,13 +208,19 @@ ScreenManager:
         SubtitleLabel:
             text: '开始新挑战'
         ScrollView:
-            size_hint_y: 1.5
+            # --- 关键修改：让这个ScrollView占据更多比例的空间 ---
+            size_hint_y: 1.5 
             GridLayout:
                 id: new_quiz_list
                 cols: 1
                 spacing: '10dp'
                 size_hint_y: None
                 height: self.minimum_height
+        
+        # --- 关键修改：删除这个制造问题的“弹簧” ---
+        # Widget:
+        #     size_hint_y: 1
+
         BoxLayout:
             size_hint_y: None
             height: '48dp'
@@ -226,6 +234,14 @@ ScreenManager:
                 font_name: 'NotoSansSC-Regular.ttf'
                 background_color: 0.8, 0.2, 0.2, 1
                 on_press: root.confirm_delete_records()
+        
+        Label:
+            text: 'Created by [李成明]' # 请在这里填入您的名字
+            font_name: 'NotoSansSC-Regular.ttf'
+            size_hint_y: None
+            height: '30dp'
+            font_size: '12sp'
+            color: 0.5, 0.5, 0.5, 1
 
 <HistoryScreen>:
     BoxLayout:
