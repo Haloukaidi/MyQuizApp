@@ -27,14 +27,12 @@ jobs:
       with:
         python-version: '3.9'
 
+    # 这个Action会安装好Android工具，并使用环境中默认的、兼容的新版Java
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Set up Java 8
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '8'
+    # --- 核心修复：删除强制切换到Java 8的步骤 ---
+    # - name: Set up Java 8 ... (整个步骤被完全删除)
 
     - name: Install dependencies
       run: |
@@ -54,11 +52,9 @@ jobs:
         sed -i 's/#fullscreen = 0/fullscreen = 1/' buildozer.spec
         echo "android.build_tools = 34.0.0" >> buildozer.spec
 
-    # --- 核心修复：使用正确的sdkmanager命令，不再指定错误路径 ---
     - name: Force accept Android SDK licenses
       run: |
-        # setup-android Action已经将正确的sdkmanager路径添加到了系统PATH中
-        # 所以我们直接调用命令即可
+        # 这个命令将在默认的新版Java环境中成功运行
         yes | sdkmanager --licenses
 
     - name: Build with Buildozer
