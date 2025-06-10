@@ -27,13 +27,16 @@ jobs:
       with:
         python-version: '3.9'
 
-    # 这个Action会安装好Android工具，并使用环境中默认的、兼容的新版Java
+    # --- 关键步骤 1：明确设置一个现代的、兼容的Java版本 ---
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    # --- 核心修复：删除强制切换到Java 8的步骤 ---
-    # - name: Set up Java 8 ... (整个步骤被完全删除)
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -51,10 +54,12 @@ jobs:
         sed -i 's/#orientation = landscape/orientation = portrait/' buildozer.spec
         sed -i 's/#fullscreen = 0/fullscreen = 1/' buildozer.spec
         echo "android.build_tools = 34.0.0" >> buildozer.spec
+        # --- 关键步骤 2：强制p4a更新其构建配方，打破缓存循环 ---
+        echo "android.skip_update = False" >> buildozer.spec
 
+    # --- 关键步骤 3：现在这个命令将在正确的Java 17环境下运行 ---
     - name: Force accept Android SDK licenses
       run: |
-        # 这个命令将在默认的新版Java环境中成功运行
         yes | sdkmanager --licenses
 
     - name: Build with Buildozer
